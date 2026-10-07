@@ -1,0 +1,506 @@
+================================================================================
+TÀI LIỆU ĐẶC TẢ API DATABASE SERVER (API SPECIFICATION)
+DỰ ÁN: WORKLIFE MANAGER - QUẢN LÝ CÔNG VIỆC & SINH HOẠT
+Phiên bản: 1.0.0
+Định dạng: RESTful JSON API
+Mã hóa: UTF-8
+Chuẩn xác thực: Bearer Token (JWT)
+Base URL: https://api.worklifemanager.com/v1
+================================================================================
+
+I. TỔNG QUAN CHUẨN KẾT NỐI VÀ HEADER
+--------------------------------------------------------------------------------
+Mọi request gửi lên server cần có Header:
+  - Content-Type: application/json
+  - Accept: application/json
+  - Authorization: Bearer <jwt_access_token> (bắt buộc cho các route bảo vệ)
+
+Cấu trúc Response chuẩn của Server:
+  Thành công (2xx):
+  {
+    "success": true,
+    "code": 200,
+    "message": "Thành công",
+    "data": { ... } // hoặc mảng [ ... ]
+  }
+
+  Thất bại (4xx, 5xx):
+  {
+    "success": false,
+    "code": 400,
+    "error": "BAD_REQUEST",
+    "message": "Mô tả chi tiết lỗi",
+    "details": [ ... ]
+  }
+
+================================================================================
+II. NHÓM 1: AUTHENTICATION & USER SETTINGS (XÁC THỰC VÀ TÀI KHOẢN)
+================================================================================
+
+1. Đăng ký tài khoản
+  - Method: POST
+  - Endpoint: /auth/register
+  - Request Body:
+    {
+      "email": "user@example.com",
+      "password": "Password123@",
+      "full_name": "Nguyễn Lê Anh Đức",
+      "avatar_url": "https://..." (optional)
+    }
+  - Response 201 Created:
+    {
+      "success": true,
+      "code": 201,
+      "message": "Đăng ký thành công",
+      "data": {
+        "user_id": "usr_99182a",
+        "email": "user@example.com",
+        "full_name": "Nguyễn Lê Anh Đức",
+        "token": "eyJhbGciOi..."
+      }
+    }
+
+2. Đăng nhập tài khoản
+  - Method: POST
+  - Endpoint: /auth/login
+  - Request Body:
+    {
+      "email": "user@example.com",
+      "password": "Password123@"
+    }
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "message": "Đăng nhập thành công",
+      "data": {
+        "access_token": "eyJhbGciOi...",
+        "token_type": "Bearer",
+        "expires_in": 86400,
+        "user": {
+          "id": "usr_99182a",
+          "email": "user@example.com",
+          "full_name": "Nguyễn Lê Anh Đức",
+          "avatar_url": "...",
+          "theme_mode": "system", // "light", "dark", "system"
+          "currency": "VND",
+          "reminder_enabled": true,
+          "auto_sync": true
+        }
+      }
+    }
+
+3. Lấy thông tin cá nhân & cài đặt
+  - Method: GET
+  - Endpoint: /user/profile
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "id": "usr_99182a",
+        "email": "user@example.com",
+        "full_name": "Nguyễn Lê Anh Đức",
+        "avatar_url": "...",
+        "theme_mode": "dark",
+        "currency": "VND",
+        "reminder_enabled": true,
+        "auto_sync": true,
+        "default_time_range": "30"
+      }
+    }
+
+4. Cập nhật hồ sơ & cài đặt người dùng
+  - Method: PUT / PATCH
+  - Endpoint: /user/profile
+  - Request Body:
+    {
+      "full_name": "Nguyễn Lê Anh Đức",
+      "avatar_url": "...",
+      "theme_mode": "dark",
+      "currency": "VND",
+      "reminder_enabled": true,
+      "auto_sync": true,
+      "default_time_range": "30"
+    }
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "message": "Cập nhật cài đặt thành công",
+      "data": { ... }
+    }
+
+================================================================================
+III. NHÓM 2: TRANG CHỦ & TỔNG QUAN N NGÀY GẦN NHẤT (DASHBOARD)
+================================================================================
+
+1. Lấy tổng quan số liệu Dashboard theo n ngày gần nhất
+  - Method: GET
+  - Endpoint: /dashboard/overview?days=7
+  - Query Params:
+    + days: integer (ví dụ: 7, 14, 30, 90). Mặc định là 7.
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "time_range_days": 7,
+        "from_date": "2026-09-28T00:00:00Z",
+        "to_date": "2026-10-04T23:59:59Z",
+        "summary": {
+          "total_tasks": 24,
+          "completed_tasks": 19,
+          "pending_tasks": 5,
+          "completion_rate": 79.16, // %
+          "total_work_value": 45000000, // Giá trị công việc
+          "total_expenses": 6850000 // Chi tiêu sinh hoạt
+        },
+        "daily_breakdown": [
+          {
+            "date": "2026-09-28",
+            "task_count": 4,
+            "task_completed": 4,
+            "expense_total": 450000
+          },
+          {
+            "date": "2026-09-29",
+            "task_count": 3,
+            "task_completed": 2,
+            "expense_total": 1200000
+          }
+        ],
+        "top_features": [
+          {
+            "id": "feat_cross_platform",
+            "title": "Đa nền tảng Desktop & Mobile",
+            "description": "Đồng bộ giao diện linh hoạt giữa Desktop có sidebar và Mobile có bottom bar."
+          },
+          {
+            "id": "feat_smart_calendar",
+            "title": "Lịch chỉ báo thông minh 3 trạng thái",
+            "description": "Nhận biết tức thì ngày có việc chưa xong (Đỏ), đã xong (Xanh lá) và sinh hoạt (Vàng gold)."
+          },
+          {
+            "id": "feat_analytics",
+            "title": "Thống kê đa chu kỳ Tuần/Tháng/Năm",
+            "description": "Phân tích chiều sâu chi tiêu sinh hoạt và hiệu suất hoàn thành công việc."
+          }
+        ]
+      }
+    }
+
+================================================================================
+IV. NHÓM 3: QUẢN LÝ CÔNG VIỆC (TASK CRUD & CALENDAR API)
+================================================================================
+
+1. Danh sách công việc (có lọc & phân trang)
+  - Method: GET
+  - Endpoint: /tasks
+  - Query Params:
+    + date: "2026-10-04" (Lọc theo ngày cụ thể được click trên mini calendar)
+    + from_date: "2026-10-01"
+    + to_date: "2026-10-31"
+    + category: "Dự án" | "Học tập" | "Họp" | "Khác"
+    + is_completed: true | false
+    + search: "Tên công việc"
+    + page: 1
+    + limit: 20
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "items": [
+          {
+            "id": "tsk_01",
+            "title": "Phát triển giao diện Flutter Desktop & Mobile",
+            "category": "Dự án",
+            "value": "25000000", // Chữ hoặc Số (ví dụ: Ngân sách hoặc quy mô)
+            "value_type": "number", // "number" | "text"
+            "start_time": "2026-10-04T08:00:00Z",
+            "end_time": "2026-10-04T18:00:00Z",
+            "progress": 85, // 0 - 100% (chỉ có mục công việc mới có)
+            "status": "in_progress", // "pending" | "in_progress" | "completed"
+            "notes": "Hoàn thiện 4 trang chính và xuất API spec",
+            "created_at": "2026-10-01T07:30:00Z",
+            "updated_at": "2026-10-04T12:00:00Z"
+          }
+        ],
+        "pagination": {
+          "total_items": 1,
+          "page": 1,
+          "limit": 20,
+          "total_pages": 1
+        }
+      }
+    }
+
+2. Tạo mới công việc
+  - Method: POST
+  - Endpoint: /tasks
+  - Request Body:
+    {
+      "title": "Họp review tiến độ tuần",
+      "category": "Họp",
+      "value": "Quan trọng cấp A",
+      "value_type": "text",
+      "start_time": "2026-10-05T09:00:00Z",
+      "end_time": "2026-10-05T10:30:00Z",
+      "progress": 0,
+      "notes": "Chuẩn bị slide báo cáo"
+    }
+  - Response 201 Created:
+    {
+      "success": true,
+      "code": 201,
+      "message": "Tạo công việc thành công",
+      "data": {
+        "id": "tsk_02",
+        "title": "Họp review tiến độ tuần",
+        ...
+      }
+    }
+
+3. Xem chi tiết công việc
+  - Method: GET
+  - Endpoint: /tasks/:id
+  - Response 200 OK:
+    {
+      "success": true,
+      "data": { ... }
+    }
+
+4. Cập nhật công việc (Edit)
+  - Method: PUT
+  - Endpoint: /tasks/:id
+  - Request Body:
+    {
+      "title": "Họp review tiến độ tuần (dời 30p)",
+      "category": "Họp",
+      "value": "Quan trọng cấp A",
+      "value_type": "text",
+      "start_time": "2026-10-05T09:30:00Z",
+      "end_time": "2026-10-05T11:00:00Z",
+      "progress": 100,
+      "notes": "Đã hoàn thành và gửi biên bản"
+    }
+  - Response 200 OK:
+    {
+      "success": true,
+      "message": "Cập nhật thành công",
+      "data": { ... }
+    }
+
+5. Xóa công việc (Delete)
+  - Method: DELETE
+  - Endpoint: /tasks/:id
+  - Response 200 OK:
+    {
+      "success": true,
+      "message": "Xóa công việc thành công"
+    }
+
+================================================================================
+V. NHÓM 4: QUẢN LÝ SINH HOẠT & CHI TIÊU (LIVING / EXPENSES CRUD)
+================================================================================
+
+1. Danh sách sinh hoạt / chi tiêu
+  - Method: GET
+  - Endpoint: /expenses
+  - Query Params:
+    + date: "2026-10-04"
+    + from_date: "2026-10-01"
+    + to_date: "2026-10-31"
+    + category: "Ăn uống" | "Mua sắm" | "Tiền nhà" | "Hóa đơn" | "Di chuyển" | "Khác"
+    + search: "Tiền chợ"
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "items": [
+          {
+            "id": "exp_01",
+            "title": "Mua thực phẩm & rau củ tuần",
+            "category": "Ăn uống",
+            "value": "450000", // Giá trị chữ hoặc số (số tiền hoặc nội dung giá trị)
+            "value_type": "number",
+            "start_time": "2026-10-04T17:00:00Z",
+            "end_time": "2026-10-04T18:00:00Z",
+            "notes": "Siêu thị WinMart",
+            "created_at": "2026-10-04T18:15:00Z"
+          }
+        ]
+      }
+    }
+
+2. Tạo mới sinh hoạt / chi tiêu
+  - Method: POST
+  - Endpoint: /expenses
+  - Request Body:
+    {
+      "title": "Thanh toán cước Internet cáp quang",
+      "category": "Hóa đơn",
+      "value": "275000",
+      "value_type": "number",
+      "start_time": "2026-10-05T08:00:00Z",
+      "end_time": "2026-10-05T08:15:00Z",
+      "notes": "Gói cước 150Mbps VNPT"
+    }
+  - Response 201 Created:
+    {
+      "success": true,
+      "code": 201,
+      "message": "Ghi nhận sinh hoạt thành công",
+      "data": {
+        "id": "exp_02", ...
+      }
+    }
+
+3. Cập nhật sinh hoạt
+  - Method: PUT
+  - Endpoint: /expenses/:id
+  - Request Body: (các trường tương tự tạo mới)
+
+4. Xóa sinh hoạt
+  - Method: DELETE
+  - Endpoint: /expenses/:id
+  - Response 200 OK:
+    {
+      "success": true,
+      "message": "Xóa sinh hoạt thành công"
+    }
+
+================================================================================
+VI. NHÓM 5: CHỈ BÁO LỊCH THU NHỎ (MINI CALENDAR INDICATORS)
+================================================================================
+
+1. Lấy trạng thái chỉ báo chấm màu cho lịch theo tháng/năm
+  - Method: GET
+  - Endpoint: /calendar/indicators?year=2026&month=10
+  - Query Params:
+    + year: integer (2026)
+    + month: integer (1 - 12)
+  - Quy tắc logic trả về:
+    + has_uncompleted_task (Đỏ): Ngày đó có ít nhất 1 công việc chưa đạt 100% hoàn thành.
+    + has_all_completed_task (Xanh lá): Ngày đó có công việc và TẤT CẢ công việc đã đạt 100%.
+    + has_expense (Vàng Gold): Ngày đó có phát sinh sinh hoạt / chi tiêu.
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "year": 2026,
+        "month": 10,
+        "days": [
+          {
+            "date": "2026-10-01",
+            "has_task": true,
+            "all_tasks_completed": true, // Dot màu xanh lá
+            "has_expense": true,         // Dot màu vàng gold
+            "task_count": 3,
+            "expense_count": 2
+          },
+          {
+            "date": "2026-10-04",
+            "has_task": true,
+            "all_tasks_completed": false, // Dot màu đỏ (vì còn việc chưa xong)
+            "has_expense": true,          // Dot màu vàng gold
+            "task_count": 4,
+            "expense_count": 1
+          },
+          {
+            "date": "2026-10-08",
+            "has_task": false,
+            "all_tasks_completed": false,
+            "has_expense": true,          // Dot màu vàng gold
+            "task_count": 0,
+            "expense_count": 1
+          }
+        ]
+      }
+    }
+
+================================================================================
+VII. NHÓM 6: THỐNG KÊ TỔNG HỢP (STATISTICS API - TUẦN / THÁNG / NĂM)
+================================================================================
+
+1. Lấy dữ liệu tổng hợp đa chu kỳ (Tuần / Tháng / Năm)
+  - Method: GET
+  - Endpoint: /statistics/summary?period=month&date=2026-10-04
+  - Query Params:
+    + period: "week" | "month" | "year"
+    + date: "2026-10-04" (ngày tham chiếu để xác định tuần/tháng/năm hiện tại)
+  - Response 200 OK:
+    {
+      "success": true,
+      "code": 200,
+      "data": {
+        "period": "month",
+        "label": "Tháng 10/2026",
+        "start_date": "2026-10-01T00:00:00Z",
+        "end_date": "2026-10-31T23:59:59Z",
+        
+        // Mục hiển thị nổi bật trên cùng trang Thống Kê
+        "top_highlight_kpis": {
+          "completed_tasks": 18,
+          "uncompleted_tasks": 6,
+          "total_tasks": 24,
+          "completion_rate": 75.0,
+          "total_task_value": 45000000,
+          "total_living_expenses": 12850000
+        },
+
+        // Phân tích chi tiết phần Công Việc
+        "tasks_analysis": {
+          "by_category": [
+            { "category": "Dự án", "count": 12, "completed": 9, "value": 32000000 },
+            { "category": "Họp hành", "count": 6, "completed": 5, "value": 3000000 },
+            { "category": "Học tập", "count": 4, "completed": 3, "value": 5000000 },
+            { "category": "Khác", "count": 2, "completed": 1, "value": 5000000 }
+          ],
+          "completion_by_timeline": [
+            { "time_slot": "Tuần 1", "completed": 5, "uncompleted": 1 },
+            { "time_slot": "Tuần 2", "completed": 4, "uncompleted": 2 },
+            { "time_slot": "Tuần 3", "completed": 5, "uncompleted": 1 },
+            { "time_slot": "Tuần 4", "completed": 4, "uncompleted": 2 }
+          ]
+        },
+
+        // Phân tích chi tiết phần Sinh Hoạt
+        "living_analysis": {
+          "by_category": [
+            { "category": "Tiền nhà & dịch vụ", "total_amount": 5500000, "percentage": 42.8 },
+            { "category": "Ăn uống", "total_amount": 4200000, "percentage": 32.7 },
+            { "category": "Mua sắm", "total_amount": 1800000, "percentage": 14.0 },
+            { "category": "Di chuyển & xăng xe", "total_amount": 850000, "percentage": 6.6 },
+            { "category": "Hóa đơn & tiện ích", "total_amount": 500000, "percentage": 3.9 }
+          ],
+          "expense_by_timeline": [
+            { "time_slot": "Tuần 1", "amount": 6800000 },
+            { "time_slot": "Tuần 2", "amount": 2100000 },
+            { "time_slot": "Tuần 3", "amount": 1950000 },
+            { "time_slot": "Tuần 4", "amount": 2000000 }
+          ]
+        }
+      }
+    }
+
+2. Xuất dữ liệu báo cáo (Export Data)
+  - Method: GET
+  - Endpoint: /statistics/export?period=month&format=json // hoặc "csv"
+  - Response 200 OK:
+    File download / JSON payload
+
+================================================================================
+VIII. MÃ LỖI THƯỜNG GẶP (HTTP STATUS CODES)
+================================================================================
+- 200 OK: Yêu cầu xử lý thành công.
+- 201 Created: Tạo tài nguyên mới thành công.
+- 400 Bad Request: Dữ liệu gửi lên không đúng định dạng (thiếu trường bắt buộc, ngày giờ sai chuẩn ISO).
+- 401 Unauthorized: Thiếu JWT Token hoặc Token hết hạn.
+- 403 Forbidden: Không có quyền truy cập dữ liệu của user khác.
+- 404 Not Found: Không tìm thấy ID công việc hoặc sinh hoạt.
+- 500 Internal Server Error: Lỗi cơ sở dữ liệu server.
+================================================================================

@@ -1,0 +1,6 @@
+{
+  "name": "WorkLife Manager - Quản Lý Công Việc & Sinh Hoạt",
+  "description": "Ứng dụng hiện đại quản lý công việc và sinh hoạt, hỗ trợ đa nền tảng Desktop & Mobile với dashboard thống kê, lịch thông minh và đồng bộ hóa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

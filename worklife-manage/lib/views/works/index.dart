@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import '../../models/task_model.dart';
-import '../../models/money_model.dart';
+import '../../models/expense_model.dart';
 import '../../controllers/task_controller.dart';
-import '../../controllers/money_controller.dart';
+import '../../controllers/expense_controller.dart';
 import '../calendars/index.dart';
 
 class WorksView extends StatefulWidget {
@@ -16,7 +15,7 @@ class WorksView extends StatefulWidget {
 }
 
 class _WorksViewState extends State<WorksView> {
-  // Mode: 0 = Quản lý công việc (Tasks), 1 = Quản lý sinh hoạt (Living/Moneys)
+  // Mode: 0 = Quản lý công việc (Tasks), 1 = Quản lý sinh hoạt (Living/Expenses)
   int _selectedMode = 0;
   String _statsPeriod = 'month'; // 'week', 'month', 'year'
 
@@ -25,10 +24,9 @@ class _WorksViewState extends State<WorksView> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final taskCtrl = context.watch<TaskController>();
-    final moneyCtrl = context.watch<MoneyController>();
+    final expCtrl = context.watch<ExpenseController>();
 
-    final selectedDateStr = DateFormat('dd/MM/yyyy')
-        .format(taskCtrl.selectedDate);
+    final selectedDateStr = DateFormat('dd/MM/yyyy').format(taskCtrl.selectedDate);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -40,9 +38,7 @@ class _WorksViewState extends State<WorksView> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF1E1E1E)
-                    : const Color(0xFFF3F4F6),
+                color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
@@ -85,19 +81,14 @@ class _WorksViewState extends State<WorksView> {
                         children: [
                           const MiniCalendarWidget(),
                           const SizedBox(height: 16),
-                          _buildSelectedDateCard(
-                            selectedDateStr,
-                            isDark,
-                            taskCtrl,
-                            moneyCtrl,
-                          ),
+                          _buildSelectedDateCard(selectedDateStr, isDark, taskCtrl, expCtrl),
                         ],
                       ),
                     ),
                     const SizedBox(width: 24),
                     // Right Column: CRUD List & Add Button
                     Expanded(
-                      child: _buildCrudSection(isDark, taskCtrl, moneyCtrl),
+                      child: _buildCrudSection(isDark, taskCtrl, expCtrl),
                     ),
                   ],
                 );
@@ -106,14 +97,9 @@ class _WorksViewState extends State<WorksView> {
                   children: [
                     const MiniCalendarWidget(),
                     const SizedBox(height: 16),
-                    _buildSelectedDateCard(
-                      selectedDateStr,
-                      isDark,
-                      taskCtrl,
-                      moneyCtrl,
-                    ),
+                    _buildSelectedDateCard(selectedDateStr, isDark, taskCtrl, expCtrl),
                     const SizedBox(height: 24),
-                    _buildCrudSection(isDark, taskCtrl, moneyCtrl),
+                    _buildCrudSection(isDark, taskCtrl, expCtrl),
                   ],
                 );
               }
@@ -123,7 +109,7 @@ class _WorksViewState extends State<WorksView> {
           const SizedBox(height: 36),
 
           // 3. Bottom Summary Section (Mục thống kê số lượng công việc, chi tiêu ở cuối tổng hợp hàng tuần/tháng/năm)
-          _buildBottomSummary(isDark, taskCtrl, moneyCtrl),
+          _buildBottomSummary(isDark, taskCtrl, expCtrl),
         ],
       ),
     );
@@ -179,10 +165,10 @@ class _WorksViewState extends State<WorksView> {
     String dateStr,
     bool isDark,
     TaskController taskCtrl,
-    MoneyController moneyCtrl,
+    ExpenseController expCtrl,
   ) {
     final dayTasks = taskCtrl.tasksForSelectedDate;
-    final dayMoneys = moneyCtrl.moneysForSelectedDate;
+    final dayExpenses = expCtrl.expensesForSelectedDate;
 
     return Container(
       width: double.infinity,
@@ -227,7 +213,7 @@ class _WorksViewState extends State<WorksView> {
           ),
           const SizedBox(height: 4),
           Text(
-            '• Có ${dayMoneys.length} sinh hoạt ghi nhận',
+            '• Có ${dayExpenses.length} sinh hoạt ghi nhận',
             style: TextStyle(
               fontSize: 12,
               color: isDark ? Colors.white70 : const Color(0xFF4B5563),
@@ -241,11 +227,11 @@ class _WorksViewState extends State<WorksView> {
   Widget _buildCrudSection(
     bool isDark,
     TaskController taskCtrl,
-    MoneyController moneyCtrl,
+    ExpenseController expCtrl,
   ) {
     final isTaskMode = _selectedMode == 0;
     final dayTasks = taskCtrl.tasksForSelectedDate;
-    final dayMoneys = moneyCtrl.moneysForSelectedDate;
+    final dayExpenses = expCtrl.expensesForSelectedDate;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,9 +244,7 @@ class _WorksViewState extends State<WorksView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isTaskMode
-                      ? 'Danh sách công việc'
-                      : 'Danh sách sinh hoạt & chi tiêu',
+                  isTaskMode ? 'Danh sách công việc' : 'Danh sách sinh hoạt & chi tiêu',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -284,27 +268,19 @@ class _WorksViewState extends State<WorksView> {
                 if (isTaskMode) {
                   _showTaskDialog(context, null);
                 } else {
-                  _showMoneyDialog(context, null);
+                  _showExpenseDialog(context, null);
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? Colors.white : Colors.black,
                 foregroundColor: isDark ? Colors.black : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
+                shape: RoundedRectangle.circular(10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
               icon: const Icon(Icons.add, size: 16),
               label: Text(
                 isTaskMode ? 'Thêm công việc' : 'Thêm sinh hoạt',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -325,14 +301,14 @@ class _WorksViewState extends State<WorksView> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: dayTasks.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final task = dayTasks[index];
                 return _buildTaskCard(task, isDark, taskCtrl);
               },
             ),
         ] else ...[
-          if (dayMoneys.isEmpty)
+          if (dayExpenses.isEmpty)
             _buildEmptyState(
               'Không có mục sinh hoạt nào trong ngày này.',
               'Nhấn "Thêm sinh hoạt" để ghi chép chi phí hoặc sinh hoạt.',
@@ -342,11 +318,11 @@ class _WorksViewState extends State<WorksView> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: dayMoneys.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemCount: dayExpenses.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                final money = dayMoneys[index];
-                return _buildMoneyCard(money, isDark, moneyCtrl);
+                final expense = dayExpenses[index];
+                return _buildExpenseCard(expense, isDark, expCtrl);
               },
             ),
         ],
@@ -367,11 +343,7 @@ class _WorksViewState extends State<WorksView> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 40,
-            color: isDark ? Colors.white38 : Colors.grey.shade400,
-          ),
+          Icon(Icons.inbox_outlined, size: 40, color: isDark ? Colors.white38 : Colors.grey.shade400),
           const SizedBox(height: 12),
           Text(
             title,
@@ -403,7 +375,7 @@ class _WorksViewState extends State<WorksView> {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: task.isCompleted
-              ? const Color(0xFF10B981).withValues(alpha: 0.5)
+              ? const Color(0xFF10B981).withOpacity(0.5)
               : (isDark ? Colors.white12 : const Color(0xFFE5E7EB)),
         ),
       ),
@@ -422,20 +394,16 @@ class _WorksViewState extends State<WorksView> {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        decoration: task.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
+                        decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Loại: ${task.category}  ·  Nội dung: ${task.title}  ·  Từ: ${timeFmt.format(task.startTime ?? DateTime.now())} đến ${timeFmt.format(task.endTime ?? DateTime.now())}',
+                      'Loại: ${task.category}  ·  Giá trị: ${task.value}  ·  Từ: ${timeFmt.format(task.startTime)} đến ${timeFmt.format(task.endTime)}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark
-                            ? Colors.white60
-                            : const Color(0xFF6B7280),
+                        color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                       ),
                     ),
                   ],
@@ -470,43 +438,32 @@ class _WorksViewState extends State<WorksView> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: task.getProgress / 100.0,
+                    value: task.progress / 100.0,
                     minHeight: 6,
-                    backgroundColor: isDark
-                        ? Colors.white12
-                        : Colors.grey.shade200,
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      task.isCompleted
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                      task.isCompleted ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                '${task.getProgress.round()}%',
+                '${task.progress}%',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: task.isCompleted
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFFEF4444),
+                  color: task.isCompleted ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                 ),
               ),
               const SizedBox(width: 8),
               // Quick toggle 100% button
               TextButton(
                 onPressed: () {
-                  if (task.getProgress == 100) {
-                    task.isCompleted = true;
-                  }
+                  ctrl.updateProgress(task.id, task.isCompleted ? 0 : 100);
                 },
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -525,7 +482,7 @@ class _WorksViewState extends State<WorksView> {
     );
   }
 
-  Widget _buildMoneyCard(MoneyModel money, bool isDark, MoneyController ctrl) {
+  Widget _buildExpenseCard(ExpenseModel expense, bool isDark, ExpenseController ctrl) {
     final timeFmt = DateFormat('HH:mm - dd/MM');
     return Container(
       padding: const EdgeInsets.all(16),
@@ -544,7 +501,7 @@ class _WorksViewState extends State<WorksView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  money.name,
+                  expense.title,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -553,16 +510,16 @@ class _WorksViewState extends State<WorksView> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Loại: ${money.category}  ·  Giá trị: ${money.value}  ·  Thời gian: ${timeFmt.format(money.startTime)} - ${timeFmt.format(money.endTime)}',
+                  'Loại: ${expense.category}  ·  Giá trị: ${expense.value}  ·  Thời gian: ${timeFmt.format(expense.startTime)} - ${timeFmt.format(expense.endTime)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                   ),
                 ),
-                if (money.notes != null && money.notes!.isNotEmpty) ...[
+                if (expense.notes != null && expense.notes!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Ghi chú: ${money.notes}',
+                    'Ghi chú: ${expense.notes}',
                     style: TextStyle(
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
@@ -578,13 +535,13 @@ class _WorksViewState extends State<WorksView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _showMoneyDialog(context, money),
+                onPressed: () => _showExpenseDialog(context, expense),
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18),
                 color: Colors.red.shade400,
-                onPressed: () => ctrl.deleteMoney(money.id),
+                onPressed: () => ctrl.deleteExpense(expense.id),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -598,7 +555,7 @@ class _WorksViewState extends State<WorksView> {
   Widget _buildBottomSummary(
     bool isDark,
     TaskController taskCtrl,
-    MoneyController moneyCtrl,
+    ExpenseController expCtrl,
   ) {
     final currencyFmt = NumberFormat('#,###', 'vi_VN');
 
@@ -658,8 +615,7 @@ class _WorksViewState extends State<WorksView> {
                 child: _buildSummaryBox(
                   label: 'Tổng công việc',
                   value: '${taskCtrl.totalTasks}',
-                  subvalue:
-                      '${taskCtrl.completedTasks} hoàn thành / ${taskCtrl.uncompletedTasks} đang làm',
+                  subvalue: '${taskCtrl.completedTasks} hoàn thành / ${taskCtrl.uncompletedTasks} đang làm',
                   isDark: isDark,
                 ),
               ),
@@ -667,8 +623,8 @@ class _WorksViewState extends State<WorksView> {
               Expanded(
                 child: _buildSummaryBox(
                   label: 'Tổng chi tiêu sinh hoạt',
-                  value: '${currencyFmt.format(moneyCtrl.totalMoney)} đ',
-                  subvalue: '${moneyCtrl.totalMoney} giao dịch sinh hoạt',
+                  value: '${currencyFmt.format(expCtrl.totalExpenseAmount)} đ',
+                  subvalue: '${expCtrl.totalExpensesCount} giao dịch sinh hoạt',
                   isDark: isDark,
                 ),
               ),
@@ -697,9 +653,7 @@ class _WorksViewState extends State<WorksView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: active
-              ? (isDark ? Colors.white : Colors.black)
-              : Colors.transparent,
+          color: active ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: active
@@ -712,9 +666,7 @@ class _WorksViewState extends State<WorksView> {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: active
-                ? (isDark ? Colors.black : Colors.white)
-                : (isDark ? Colors.white70 : Colors.black87),
+            color: active ? (isDark ? Colors.black : Colors.white) : (isDark ? Colors.white70 : Colors.black87),
           ),
         ),
       ),
@@ -772,15 +724,12 @@ class _WorksViewState extends State<WorksView> {
   // Dialog for Task Add/Edit
   void _showTaskDialog(BuildContext context, TaskModel? existing) {
     final titleController = TextEditingController(text: existing?.title ?? '');
-    final categoryController = TextEditingController(
-      text: existing?.category ?? 'Dự án',
-    );
-    final valueController = TextEditingController(text: existing?.name ?? '');
+    final categoryController = TextEditingController(text: existing?.category ?? 'Dự án');
+    final valueController = TextEditingController(text: existing?.value ?? '');
     final notesController = TextEditingController(text: existing?.notes ?? '');
-    int progress = existing?.getProgress.round() ?? 0;
+    int progress = existing?.progress ?? 0;
     DateTime start = existing?.startTime ?? DateTime.now();
-    DateTime end =
-        existing?.endTime ?? DateTime.now().add(const Duration(hours: 2));
+    DateTime end = existing?.endTime ?? DateTime.now().add(const Duration(hours: 2));
 
     showDialog(
       context: context,
@@ -788,9 +737,7 @@ class _WorksViewState extends State<WorksView> {
         return StatefulBuilder(
           builder: (context, setDlgState) {
             return AlertDialog(
-              title: Text(
-                existing == null ? 'Thêm công việc mới' : 'Chỉnh sửa công việc',
-              ),
+              title: Text(existing == null ? 'Thêm công việc mới' : 'Chỉnh sửa công việc'),
               content: SingleChildScrollView(
                 child: SizedBox(
                   width: 440,
@@ -799,101 +746,19 @@ class _WorksViewState extends State<WorksView> {
                     children: [
                       TextField(
                         controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tên công việc *',
-                        ),
+                        decoration: const InputDecoration(labelText: 'Tên công việc *'),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: categoryController,
-                        decoration: const InputDecoration(
-                          labelText:
-                              'Loại công việc (Dự án, Họp, Học tập, ...)',
-                        ),
+                        decoration: const InputDecoration(labelText: 'Loại công việc (Dự án, Họp, Học tập, ...)'),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: valueController,
-                        decoration: const InputDecoration(
-                          labelText: 'Giá trị (chữ hoặc số, ví dụ: 25000000 hoặc Cấp A)',
-                        ),
+                        decoration: const InputDecoration(labelText: 'Giá trị (chữ hoặc số, ví dụ: 25000000 hoặc Cấp A)'),
                       ),
-                      const SizedBox(height: 14),
-                      // Date Time Pickers
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final d = await showDatePicker(
-                                  context: context,
-                                  initialDate: start,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2035),
-                                );
-                                if (d != null) {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(start),
-                                  );
-                                  if (t != null) {
-                                    setDlgState(() {
-                                      start = DateTime(
-                                        d.year,
-                                        d.month,
-                                        d.day,
-                                        t.hour,
-                                        t.minute,
-                                      );
-                                    });
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.calendar_today, size: 14),
-                              label: Text(
-                                'BĐ: ${DateFormat('dd/MM HH:mm').format(start)}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final d = await showDatePicker(
-                                  context: context,
-                                  initialDate: end,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2035),
-                                );
-                                if (d != null) {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(end),
-                                  );
-                                  if (t != null) {
-                                    setDlgState(() {
-                                      end = DateTime(
-                                        d.year,
-                                        d.month,
-                                        d.day,
-                                        t.hour,
-                                        t.minute,
-                                      );
-                                    });
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.event_available, size: 14),
-                              label: Text(
-                                'KT: ${DateFormat('dd/MM HH:mm').format(end)}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                       // Progress slider (Mức độ hoàn thành - CHỈ CÓ Ở CÔNG VIỆC)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -901,20 +766,8 @@ class _WorksViewState extends State<WorksView> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Mức độ hoàn thành:',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                '$progress%',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              const Text('Mức độ hoàn thành:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              Text('$progress%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Slider(
@@ -930,9 +783,7 @@ class _WorksViewState extends State<WorksView> {
                       ),
                       TextField(
                         controller: notesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Ghi chú thêm',
-                        ),
+                        decoration: const InputDecoration(labelText: 'Ghi chú thêm'),
                       ),
                     ],
                   ),
@@ -947,14 +798,13 @@ class _WorksViewState extends State<WorksView> {
                   onPressed: () {
                     if (titleController.text.trim().isEmpty) return;
                     final task = TaskModel(
-                      id:
-                          existing?.id ??
-                          'tsk_${DateTime.now().millisecondsSinceEpoch}',
+                      id: existing?.id ?? 'tsk_${DateTime.now().millisecondsSinceEpoch}',
                       title: titleController.text.trim(),
-                      category: categoryController.text.trim().isEmpty
-                          ? 'Chung'
-                          : categoryController.text.trim(),
-                      time: (start.toString() + end.toString()),
+                      category: categoryController.text.trim().isEmpty ? 'Chung' : categoryController.text.trim(),
+                      value: valueController.text.trim(),
+                      startTime: start,
+                      endTime: end,
+                      progress: progress,
                       notes: notesController.text.trim(),
                     );
                     final ctrl = context.read<TaskController>();
@@ -975,190 +825,77 @@ class _WorksViewState extends State<WorksView> {
     );
   }
 
-  // Dialog for Money Add/Edit
-  void _showMoneyDialog(BuildContext context, MoneyModel? existing) {
-    final titleController = TextEditingController(text: existing?.name ?? '');
-    final categoryController = TextEditingController(
-      text: existing?.category.toString(),
-    );
-    final groupController = TextEditingController(
-      text: existing?.group.toString(),
-    );
-    final valueController = TextEditingController(
-      text: existing?.value.toString(),
-    );
+  // Dialog for Expense Add/Edit
+  void _showExpenseDialog(BuildContext context, ExpenseModel? existing) {
+    final titleController = TextEditingController(text: existing?.title ?? '');
+    final categoryController = TextEditingController(text: existing?.category ?? 'Ăn uống');
+    final valueController = TextEditingController(text: existing?.value ?? '');
     final notesController = TextEditingController(text: existing?.notes ?? '');
     DateTime start = existing?.startTime ?? DateTime.now();
-    DateTime end =
-        existing?.endTime ?? DateTime.now().add(const Duration(hours: 1));
+    DateTime end = existing?.endTime ?? DateTime.now().add(const Duration(hours: 1));
 
     showDialog(
       context: context,
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDlgState) {
-            return AlertDialog(
-              title: Text(
-                existing == null
-                    ? 'Ghi nhận sinh hoạt mới'
-                    : 'Chỉnh sửa sinh hoạt',
-              ),
-              content: SingleChildScrollView(
-                child: SizedBox(
-                  width: 440,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tên sinh hoạt / khoản chi *',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: categoryController,
-                        decoration: const InputDecoration(
-                          labelText: 'Chi phí hay nhận thưởng',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: groupController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tiền ở phần nào',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: valueController,
-                        decoration: const InputDecoration(
-                          labelText: 'Giá trị (chữ hoặc số, ví dụ: 450000 đ hoặc Mua đồ siêu thị)',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      // Date Time Pickers
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final d = await showDatePicker(
-                                  context: context,
-                                  initialDate: start,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2035),
-                                );
-                                if (d != null) {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(start),
-                                  );
-                                  if (t != null) {
-                                    setDlgState(() {
-                                      start = DateTime(
-                                        d.year,
-                                        d.month,
-                                        d.day,
-                                        t.hour,
-                                        t.minute,
-                                      );
-                                    });
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.calendar_today, size: 14),
-                              label: Text(
-                                'BĐ: ${DateFormat('dd/MM HH:mm').format(start)}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final d = await showDatePicker(
-                                  context: context,
-                                  initialDate: end,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2035),
-                                );
-                                if (d != null) {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.fromDateTime(end),
-                                  );
-                                  if (t != null) {
-                                    setDlgState(() {
-                                      end = DateTime(
-                                        d.year,
-                                        d.month,
-                                        d.day,
-                                        t.hour,
-                                        t.minute,
-                                      );
-                                    });
-                                  }
-                                }
-                              },
-                              icon: const Icon(Icons.event_available, size: 14),
-                              label: Text(
-                                'KT: ${DateFormat('dd/MM HH:mm').format(end)}',
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: notesController,
-                        decoration: const InputDecoration(
-                          labelText: 'Ghi chú thêm',
-                        ),
-                      ),
-                    ],
+        return AlertDialog(
+          title: Text(existing == null ? 'Ghi nhận sinh hoạt mới' : 'Chỉnh sửa sinh hoạt'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 440,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Tên sinh hoạt / khoản chi *'),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: categoryController,
+                    decoration: const InputDecoration(labelText: 'Loại sinh hoạt (Ăn uống, Tiền nhà, Mua sắm, ...)'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: valueController,
+                    decoration: const InputDecoration(labelText: 'Giá trị (chữ hoặc số, ví dụ: 450000 đ hoặc Mua đồ siêu thị)'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    decoration: const InputDecoration(labelText: 'Ghi chú thêm'),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Hủy'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (titleController.text.trim().isEmpty) return;
-                    final money = MoneyModel(
-                      id:
-                          existing?.id ??
-                          'exp_${DateTime.now().millisecondsSinceEpoch}',
-                      name: titleController.text.trim(),
-                      category: categoryController.text == "expense"
-                          ? MoneyType.expense
-                          : MoneyType.income,
-                      group: groupController.text.trim(),
-                      value: int.tryParse(valueController.text)!,
-                      date:
-                          start.toIso8601String() +
-                          ' - ' +
-                          end.toIso8601String(),
-                      notes: notesController.text.trim(),
-                    );
-                    final ctrl = context.read<MoneyController>();
-                    if (existing == null) {
-                      ctrl.addMoney(money);
-                    } else {
-                      ctrl.updateMoney(money);
-                    }
-                    Navigator.pop(ctx);
-                  },
-                  child: const Text('Lưu'),
-                ),
-              ],
-            );
-          },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.trim().isEmpty) return;
+                final expense = ExpenseModel(
+                  id: existing?.id ?? 'exp_${DateTime.now().millisecondsSinceEpoch}',
+                  title: titleController.text.trim(),
+                  category: categoryController.text.trim().isEmpty ? 'Ăn uống' : categoryController.text.trim(),
+                  value: valueController.text.trim(),
+                  startTime: start,
+                  endTime: end,
+                  notes: notesController.text.trim(),
+                );
+                final ctrl = context.read<ExpenseController>();
+                if (existing == null) {
+                  ctrl.addExpense(expense);
+                } else {
+                  ctrl.updateExpense(expense);
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
         );
       },
     );

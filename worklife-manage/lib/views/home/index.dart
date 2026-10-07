@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import '../../controllers/task_controller.dart';
-import '../../controllers/money_controller.dart';
+import '../../controllers/expense_controller.dart';
 
 class HomeView extends StatefulWidget {
   final VoidCallback? onNavigateToWorks;
@@ -23,19 +22,17 @@ class _HomeViewState extends State<HomeView> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final taskCtrl = context.watch<TaskController>();
-    final expCtrl = context.watch<MoneyController>();
+    final expCtrl = context.watch<ExpenseController>();
 
     final pastTasks = taskCtrl.getTasksInPastDays(_pastDays);
-    final pastMoney = expCtrl.getMoneyInPastDays(_pastDays);
+    final pastExpenses = expCtrl.getExpensesInPastDays(_pastDays);
 
     final completedTasks = pastTasks.where((t) => t.isCompleted).length;
-    final completionRate = pastTasks.isEmpty
-        ? 0.0
-        : (completedTasks / pastTasks.length) * 100;
+    final completionRate = pastTasks.isEmpty ? 0.0 : (completedTasks / pastTasks.length) * 100;
 
-    int totalMoneyAmount = 0;
-    for (var e in pastMoney) {
-      totalMoneyAmount += e.value;
+    double totalExpenseAmount = 0.0;
+    for (var e in pastExpenses) {
+      totalExpenseAmount += double.tryParse(e.value) ?? 0.0;
     }
 
     final currencyFmt = NumberFormat('#,###', 'vi_VN');
@@ -97,9 +94,7 @@ class _HomeViewState extends State<HomeView> {
               // Segmented selector for past n days
               Container(
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E1E1E)
-                      : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
@@ -113,10 +108,7 @@ class _HomeViewState extends State<HomeView> {
                       onTap: () => setState(() => _pastDays = d),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, py: 6),
                         decoration: BoxDecoration(
                           color: selected
                               ? (isDark ? Colors.white : Colors.black)
@@ -130,9 +122,7 @@ class _HomeViewState extends State<HomeView> {
                             fontWeight: FontWeight.w600,
                             color: selected
                                 ? (isDark ? Colors.black : Colors.white)
-                                : (isDark
-                                      ? Colors.white70
-                                      : const Color(0xFF4B5563)),
+                                : (isDark ? Colors.white70 : const Color(0xFF4B5563)),
                           ),
                         ),
                       ),
@@ -160,30 +150,29 @@ class _HomeViewState extends State<HomeView> {
                   _buildMetricCard(
                     title: 'Tổng công việc',
                     value: '${pastTasks.length}',
-                    subtext:
-                        '$completedTasks đã xong / ${pastTasks.length - completedTasks} chưa xong',
+                    subtext: '$completedTasks đã xong / ${pastTasks.length - completedTasks} chưa xong',
                     icon: Icons.assignment_outlined,
                     isDark: isDark,
                   ),
                   _buildMetricCard(
                     title: 'Tỷ lệ hoàn thành',
                     value: '${completionRate.toStringAsFixed(1)}%',
-                    subtext: '$completedTasks việc đạt tiến độ 100%',
+                    subtext: '${completedTasks} việc đạt tiến độ 100%',
                     icon: Icons.check_circle_outline,
                     isDark: isDark,
                     highlightColor: const Color(0xFF10B981),
                   ),
                   _buildMetricCard(
                     title: 'Chi tiêu sinh hoạt',
-                    value: '${currencyFmt.format(totalMoneyAmount)} đ',
-                    subtext: '${pastMoney.length} khoản tiền đã ghi nhận',
+                    value: '${currencyFmt.format(totalExpenseAmount)} đ',
+                    subtext: '${pastExpenses.length} khoản chi phí ghi nhận',
                     icon: Icons.account_balance_wallet_outlined,
                     isDark: isDark,
                     highlightColor: const Color(0xFFEAB308),
                   ),
                   _buildMetricCard(
                     title: 'Tổng số mục sinh hoạt',
-                    value: '${pastMoney.length}',
+                    value: '${pastExpenses.length}',
                     subtext: 'Ăn uống, tiền nhà, hóa đơn...',
                     icon: Icons.local_activity_outlined,
                     isDark: isDark,
@@ -216,9 +205,7 @@ class _HomeViewState extends State<HomeView> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF111827),
+                          color: isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -226,9 +213,7 @@ class _HomeViewState extends State<HomeView> {
                         'Theo dõi tiến độ, kiểm soát chi tiêu và xem thống kê báo cáo.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark
-                              ? Colors.white60
-                              : const Color(0xFF6B7280),
+                          color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                         ),
                       ),
                     ],
@@ -239,19 +224,11 @@ class _HomeViewState extends State<HomeView> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isDark ? Colors.white : Colors.black,
                     foregroundColor: isDark ? Colors.black : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 12,
-                    ),
+                    shape: RoundedRectangle.circular(10),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   ),
                   icon: const Icon(Icons.arrow_forward, size: 16),
-                  label: const Text(
-                    'Đến Quản Lý',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  label: const Text('Đến Quản Lý', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -312,11 +289,7 @@ class _HomeViewState extends State<HomeView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    f['icon'] as IconData,
-                    size: 24,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                  Icon(f['icon'] as IconData, size: 24, color: isDark ? Colors.white : Colors.black),
                   const Spacer(),
                   Text(
                     f['title'] as String,
@@ -378,13 +351,7 @@ class _HomeViewState extends State<HomeView> {
                   color: isDark ? Colors.white70 : const Color(0xFF4B5563),
                 ),
               ),
-              Icon(
-                icon,
-                size: 18,
-                color:
-                    highlightColor ??
-                    (isDark ? Colors.white54 : Colors.black45),
-              ),
+              Icon(icon, size: 18, color: highlightColor ?? (isDark ? Colors.white54 : Colors.black45)),
             ],
           ),
           Text(
@@ -393,9 +360,7 @@ class _HomeViewState extends State<HomeView> {
               fontSize: 22,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
-              color:
-                  highlightColor ??
-                  (isDark ? Colors.white : const Color(0xFF111827)),
+              color: highlightColor ?? (isDark ? Colors.white : const Color(0xFF111827)),
             ),
           ),
           Text(

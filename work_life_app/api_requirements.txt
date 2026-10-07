@@ -1,0 +1,19 @@
+Các API cần thiết để hỗ trợ frontend:
+
+1. Dashboard (Trang chủ)
+- GET /api/dashboard/stats?days=n: Lấy số liệu tổng quan trong n ngày gần nhất.
+- GET /api/features/active: Lấy danh sách tính năng nổi bật.
+
+2. Quản lý Công việc & Sinh hoạt (Trang quản lý)
+- GET /api/items?type=[work|life]&date=...: Lấy danh sách công việc hoặc sinh hoạt theo ngày/tháng/năm.
+- POST /api/items: Tạo mới công việc hoặc sinh hoạt.
+- PUT /api/items/{id}: Cập nhật công việc/sinh hoạt.
+- DELETE /api/items/{id}: Xóa công việc/sinh hoạt.
+- GET /api/stats/summary?period=[week|month|year]: Lấy tổng chi tiêu/số lượng công việc.
+
+3. Tổng hợp Dữ liệu (Trang thống kê)
+- GET /api/reports/detailed?type=all&period=...: Lấy chi tiết báo cáo để hiển thị biểu đồ.
+
+4. Cài đặt (Trang cài đặt)
+- GET /api/settings: Lấy cấu hình tài khoản/giao diện.
+- PUT /api/settings: Cập nhật cấu hình.

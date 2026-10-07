@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import '../../controllers/task_controller.dart';
-import '../../controllers/money_controller.dart';
+import '../../controllers/expense_controller.dart';
 
 class MiniCalendarWidget extends StatefulWidget {
   final Function(DateTime)? onDateSelected;
@@ -22,18 +21,10 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final taskCtrl = context.watch<TaskController>();
-    final expCtrl = context.watch<MoneyController>();
+    final expCtrl = context.watch<ExpenseController>();
 
-    final firstDayOfMonth = DateTime(
-      _currentMonth.year,
-      _currentMonth.month,
-      1,
-    );
-    final lastDayOfMonth = DateTime(
-      _currentMonth.year,
-      _currentMonth.month + 1,
-      0,
-    );
+    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
     final daysInMonth = lastDayOfMonth.day;
     final startingWeekday = firstDayOfMonth.weekday; // 1 = Mon, 7 = Sun
 
@@ -43,9 +34,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.15)
-              : const Color(0xFFE5E7EB),
+          color: isDark ? Colors.white.withOpacity(0.15) : const Color(0xFFE5E7EB),
           width: 1,
         ),
       ),
@@ -57,10 +46,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                DateFormat(
-                  'MMMM yyyy',
-                  'vi',
-                ).format(_currentMonth).toUpperCase(),
+                DateFormat('MMMM yyyy', 'vi').format(_currentMonth).toUpperCase(),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -75,10 +61,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       setState(() {
-                        _currentMonth = DateTime(
-                          _currentMonth.year,
-                          _currentMonth.month - 1,
-                        );
+                        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
                       });
                     },
                   ),
@@ -87,10 +70,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       setState(() {
-                        _currentMonth = DateTime(
-                          _currentMonth.year,
-                          _currentMonth.month + 1,
-                        );
+                        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
                       });
                     },
                   ),
@@ -162,20 +142,13 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
               }
 
               final day = dayOffset + 1;
-              final date = DateTime(
-                _currentMonth.year,
-                _currentMonth.month,
-                day,
-              );
-              final isSelected = taskCtrl.isSameDay(
-                date,
-                taskCtrl.selectedDate,
-              );
+              final date = DateTime(_currentMonth.year, _currentMonth.month, day);
+              final isSelected = taskCtrl.isSameDay(date, taskCtrl.selectedDate);
               final isToday = taskCtrl.isSameDay(date, DateTime.now());
 
               final hasTasks = taskCtrl.hasTasksOnDate(date);
               final allCompleted = taskCtrl.areAllTasksCompletedOnDate(date);
-              final hasMoney = expCtrl.hasMoneyOnDate(date);
+              final hasExpense = expCtrl.hasExpenseOnDate(date);
 
               return InkWell(
                 onTap: () {
@@ -189,15 +162,15 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
                     color: isSelected
                         ? (isDark ? Colors.white : Colors.black)
                         : (isToday
-                              ? (isDark ? Colors.white12 : Colors.grey.shade100)
-                              : Colors.transparent),
+                            ? (isDark ? Colors.white12 : Colors.grey.shade100)
+                            : Colors.transparent),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected
                           ? (isDark ? Colors.white : Colors.black)
                           : (isToday
-                                ? (isDark ? Colors.white30 : Colors.black26)
-                                : Colors.transparent),
+                              ? (isDark ? Colors.white30 : Colors.black26)
+                              : Colors.transparent),
                       width: 1,
                     ),
                   ),
@@ -208,9 +181,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
                         '$day',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.w500,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                           color: isSelected
                               ? (isDark ? Colors.black : Colors.white)
                               : (isDark ? Colors.white : Colors.black87),
@@ -233,7 +204,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
                                     : const Color(0xFFEF4444), // Red
                               ),
                             ),
-                          if (hasMoney)
+                          if (hasExpense)
                             Container(
                               width: 5,
                               height: 5,
@@ -256,11 +227,7 @@ class _MiniCalendarWidgetState extends State<MiniCalendarWidget> {
     );
   }
 
-  Widget _buildLegendItem({
-    required Color color,
-    required String label,
-    required bool isDark,
-  }) {
+  Widget _buildLegendItem({required Color color, required String label, required bool isDark}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

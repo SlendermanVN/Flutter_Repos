@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-
 import '../../controllers/task_controller.dart';
-import '../../controllers/money_controller.dart';
+import '../../controllers/expense_controller.dart';
 import '../../models/task_model.dart';
-import '../../models/money_model.dart';
+import '../../models/expense_model.dart';
 
 class StatisticsView extends StatefulWidget {
   const StatisticsView({super.key});
@@ -23,7 +22,7 @@ class _StatisticsViewState extends State<StatisticsView> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final taskCtrl = context.watch<TaskController>();
-    final moneyCtrl = context.watch<MoneyController>();
+    final expCtrl = context.watch<ExpenseController>();
 
     final currencyFmt = NumberFormat('#,###', 'vi_VN');
 
@@ -32,10 +31,8 @@ class _StatisticsViewState extends State<StatisticsView> {
     final completedTasks = taskCtrl.completedTasks;
     final uncompletedTasks = taskCtrl.uncompletedTasks;
     final completionRate = taskCtrl.completionRate;
-    final totalTasksNumber = taskCtrl
-        .totalTasks; // Assuming you have a method to calculate total task value
-    final totalMoneys =
-        moneyCtrl.totalIncomeCount + moneyCtrl.totalExpensesCount;
+    final totalTaskValue = taskCtrl.totalTaskNumericValue;
+    final totalExpenses = expCtrl.totalExpenseAmount;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -70,9 +67,7 @@ class _StatisticsViewState extends State<StatisticsView> {
               // Filter selector
               Container(
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E1E1E)
-                      : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
@@ -98,8 +93,8 @@ class _StatisticsViewState extends State<StatisticsView> {
             uncompletedTasks: uncompletedTasks,
             totalTasks: totalTasks,
             completionRate: completionRate,
-            totalTaskValue: totalTasksNumber,
-            totalMoneys: totalMoneys,
+            totalTaskValue: totalTaskValue,
+            totalExpenses: totalExpenses,
             currencyFmt: currencyFmt,
             isDark: isDark,
           ),
@@ -115,36 +110,20 @@ class _StatisticsViewState extends State<StatisticsView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _buildTasksAnalysisSection(
-                        taskCtrl.tasks,
-                        isDark,
-                        currencyFmt,
-                      ),
+                      child: _buildTasksAnalysisSection(taskCtrl.tasks, isDark, currencyFmt),
                     ),
                     const SizedBox(width: 24),
                     Expanded(
-                      child: _buildLivingAnalysisSection(
-                        moneyCtrl.moneys,
-                        isDark,
-                        currencyFmt,
-                      ),
+                      child: _buildLivingAnalysisSection(expCtrl.expenses, isDark, currencyFmt),
                     ),
                   ],
                 );
               } else {
                 return Column(
                   children: [
-                    _buildTasksAnalysisSection(
-                      taskCtrl.tasks,
-                      isDark,
-                      currencyFmt,
-                    ),
+                    _buildTasksAnalysisSection(taskCtrl.tasks, isDark, currencyFmt),
                     const SizedBox(height: 24),
-                    _buildLivingAnalysisSection(
-                      moneyCtrl.moneys,
-                      isDark,
-                      currencyFmt,
-                    ),
+                    _buildLivingAnalysisSection(expCtrl.expenses, isDark, currencyFmt),
                   ],
                 );
               }
@@ -163,9 +142,7 @@ class _StatisticsViewState extends State<StatisticsView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: active
-              ? (isDark ? Colors.white : Colors.black)
-              : Colors.transparent,
+          color: active ? (isDark ? Colors.white : Colors.black) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -173,9 +150,7 @@ class _StatisticsViewState extends State<StatisticsView> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: active
-                ? (isDark ? Colors.black : Colors.white)
-                : (isDark ? Colors.white70 : Colors.black87),
+            color: active ? (isDark ? Colors.black : Colors.white) : (isDark ? Colors.white70 : Colors.black87),
           ),
         ),
       ),
@@ -188,8 +163,8 @@ class _StatisticsViewState extends State<StatisticsView> {
     required int uncompletedTasks,
     required int totalTasks,
     required double completionRate,
-    required int totalTaskValue,
-    required int totalMoneys,
+    required double totalTaskValue,
+    required double totalExpenses,
     required NumberFormat currencyFmt,
     required bool isDark,
   }) {
@@ -273,7 +248,7 @@ class _StatisticsViewState extends State<StatisticsView> {
                   ),
                   _buildHighlightBox(
                     label: 'Tổng chi tiêu sinh hoạt',
-                    value: '${currencyFmt.format(totalMoneys)} đ',
+                    value: '${currencyFmt.format(totalExpenses)} đ',
                     subtext: 'Ăn uống, thuê nhà & hóa đơn',
                     color: const Color(0xFFEAB308),
                     icon: Icons.payments_outlined,
@@ -369,11 +344,7 @@ class _StatisticsViewState extends State<StatisticsView> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.business_center_outlined,
-                size: 20,
-                color: isDark ? Colors.white : Colors.black,
-              ),
+              Icon(Icons.business_center_outlined, size: 20, color: isDark ? Colors.white : Colors.black),
               const SizedBox(width: 8),
               Text(
                 'Phân tích chi tiết: Công việc',
@@ -396,9 +367,7 @@ class _StatisticsViewState extends State<StatisticsView> {
           ),
           const SizedBox(height: 10),
           ...catCounts.entries.map((entry) {
-            final percentage = tasks.isEmpty
-                ? 0.0
-                : (entry.value / tasks.length);
+            final percentage = tasks.isEmpty ? 0.0 : (entry.value / tasks.length);
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Column(
@@ -411,9 +380,7 @@ class _StatisticsViewState extends State<StatisticsView> {
                         entry.key,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF111827),
+                          color: isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       Text(
@@ -421,9 +388,7 @@ class _StatisticsViewState extends State<StatisticsView> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.white70
-                              : const Color(0xFF4B5563),
+                          color: isDark ? Colors.white70 : const Color(0xFF4B5563),
                         ),
                       ),
                     ],
@@ -434,9 +399,7 @@ class _StatisticsViewState extends State<StatisticsView> {
                     child: LinearProgressIndicator(
                       value: percentage,
                       minHeight: 5,
-                      backgroundColor: isDark
-                          ? Colors.white12
-                          : Colors.grey.shade200,
+                      backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         isDark ? Colors.white : Colors.black87,
                       ),
@@ -453,16 +416,15 @@ class _StatisticsViewState extends State<StatisticsView> {
 
   // Phân tích riêng mục Sinh hoạt
   Widget _buildLivingAnalysisSection(
-    List<MoneyModel> moneys,
+    List<ExpenseModel> expenses,
     bool isDark,
     NumberFormat currencyFmt,
   ) {
-    final Map<String, int> catAmounts = {};
-    int total = 0;
-    for (var e in moneys) {
-      final amt = e.value;
-      catAmounts[e.category.toString()] =
-          (catAmounts[e.category.toString()] ?? 0) + amt;
+    final Map<String, double> catAmounts = {};
+    double total = 0.0;
+    for (var e in expenses) {
+      final amt = double.tryParse(e.value) ?? 0.0;
+      catAmounts[e.category] = (catAmounts[e.category] ?? 0.0) + amt;
       total += amt;
     }
 
@@ -480,11 +442,7 @@ class _StatisticsViewState extends State<StatisticsView> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 20,
-                color: Color(0xFFEAB308),
-              ),
+              const Icon(Icons.account_balance_wallet_outlined, size: 20, color: Color(0xFFEAB308)),
               const SizedBox(width: 8),
               Text(
                 'Phân tích chi tiết: Sinh hoạt & Chi tiêu',
@@ -520,9 +478,7 @@ class _StatisticsViewState extends State<StatisticsView> {
                         entry.key,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF111827),
+                          color: isDark ? Colors.white : const Color(0xFF111827),
                         ),
                       ),
                       Text(
@@ -541,12 +497,8 @@ class _StatisticsViewState extends State<StatisticsView> {
                     child: LinearProgressIndicator(
                       value: percentage,
                       minHeight: 5,
-                      backgroundColor: isDark
-                          ? Colors.white12
-                          : Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFFEAB308),
-                      ),
+                      backgroundColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFEAB308)),
                     ),
                   ),
                 ],

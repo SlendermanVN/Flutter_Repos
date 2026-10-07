@@ -23,6 +23,7 @@ class _SettingsViewState extends State<SettingsView> {
   // Feature state
   bool _taskReminder = true;
   bool _autoSync = true;
+  bool _soundEnabled = false;
   String _defaultView = 'Tháng';
 
   @override
@@ -105,9 +106,7 @@ class _SettingsViewState extends State<SettingsView> {
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: isDark
-                          ? Colors.white24
-                          : Colors.grey.shade300,
+                      backgroundColor: isDark ? Colors.white24 : Colors.grey.shade300,
                       child: Text(
                         _fullName.substring(0, 1),
                         style: TextStyle(
@@ -127,9 +126,7 @@ class _SettingsViewState extends State<SettingsView> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF111827),
+                              color: isDark ? Colors.white : const Color(0xFF111827),
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -137,9 +134,7 @@ class _SettingsViewState extends State<SettingsView> {
                             _email,
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark
-                                  ? Colors.white60
-                                  : const Color(0xFF6B7280),
+                              color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                             ),
                           ),
                         ],
@@ -149,9 +144,7 @@ class _SettingsViewState extends State<SettingsView> {
                       onPressed: () => _showEditProfileDialog(context),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: isDark
-                              ? Colors.white30
-                              : const Color(0xFFD1D5DB),
+                          color: isDark ? Colors.white30 : const Color(0xFFD1D5DB),
                         ),
                       ),
                       child: const Text('Chỉnh sửa'),
@@ -167,10 +160,7 @@ class _SettingsViewState extends State<SettingsView> {
                     value: _currency,
                     underline: const SizedBox.shrink(),
                     items: ['VND (₫)', 'USD (\$)'].map((c) {
-                      return DropdownMenuItem(
-                        value: c,
-                        child: Text(c, style: const TextStyle(fontSize: 13)),
-                      );
+                      return DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)));
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _currency = val);
@@ -214,10 +204,7 @@ class _SettingsViewState extends State<SettingsView> {
                     value: _defaultView,
                     underline: const SizedBox.shrink(),
                     items: ['Tuần', 'Tháng', 'Năm'].map((p) {
-                      return DropdownMenuItem(
-                        value: p,
-                        child: Text(p, style: const TextStyle(fontSize: 13)),
-                      );
+                      return DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)));
                     }).toList(),
                     onChanged: (val) {
                       if (val != null) setState(() => _defaultView = val);
@@ -236,9 +223,7 @@ class _SettingsViewState extends State<SettingsView> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF111827),
+                            color: isDark ? Colors.white : const Color(0xFF111827),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -246,9 +231,7 @@ class _SettingsViewState extends State<SettingsView> {
                           'Tải về file JSON / CSV để lưu trữ nội bộ',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark
-                                ? Colors.white60
-                                : const Color(0xFF6B7280),
+                            color: isDark ? Colors.white60 : const Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -256,11 +239,7 @@ class _SettingsViewState extends State<SettingsView> {
                     OutlinedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Đã xuất dữ liệu sao lưu thành công (JSON)!',
-                            ),
-                          ),
+                          const SnackBar(content: Text('Đã xuất dữ liệu sao lưu thành công (JSON)!')),
                         );
                       },
                       icon: const Icon(Icons.file_download_outlined, size: 16),
@@ -360,23 +339,9 @@ class _SettingsViewState extends State<SettingsView> {
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: previewText,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  Container(width: 8, height: 8, decoration: BoxDecoration(color: previewText, shape: BoxShape.circle)),
                   const SizedBox(width: 6),
-                  Container(
-                    width: 40,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: previewText.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+                  Container(width: 40, height: 6, decoration: BoxDecoration(color: previewText.withOpacity(0.5), borderRadius: BorderRadius.circular(3))),
                 ],
               ),
             ),
@@ -393,11 +358,7 @@ class _SettingsViewState extends State<SettingsView> {
                   ),
                 ),
                 if (isSelected)
-                  const Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: Color(0xFF10B981),
-                  ),
+                  const Icon(Icons.check_circle, size: 18, color: Color(0xFF10B981)),
               ],
             ),
             const SizedBox(height: 2),
@@ -447,7 +408,10 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
         ),
-        Switch(value: value, onChanged: onChanged),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+        ),
       ],
     );
   }

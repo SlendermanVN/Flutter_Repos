@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/date_symbol_data_local.dart';
-
 import 'controllers/task_controller.dart';
-import 'controllers/money_controller.dart';
+import 'controllers/expense_controller.dart';
 import 'views/home/index.dart';
 import 'views/works/index.dart';
 import 'views/statistics/index.dart';
 import 'views/settings/index.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('vi_VN', null);
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TaskController()),
-        ChangeNotifierProvider(create: (_) => MoneyController()),
+        ChangeNotifierProvider(create: (_) => ExpenseController()),
       ],
       child: const WorkLifeApp(),
     ),
@@ -54,6 +51,7 @@ class _WorkLifeAppState extends State<WorkLifeApp> {
         primary: Colors.black,
         secondary: Color(0xFF374151),
         surface: Colors.white,
+        background: Color(0xFFF9FAFB),
         outline: Color(0xFFD1D5DB), // Đen xám viền
       ),
       dividerColor: const Color(0xFFE5E7EB),
@@ -76,18 +74,16 @@ class _WorkLifeAppState extends State<WorkLifeApp> {
         primary: Colors.white,
         secondary: const Color(0xFFD1D5DB),
         surface: const Color(0xFF1E1E1E),
-        outline: Colors.white.withValues(alpha: 0.18), // Trắng viền
+        background: const Color(0xFF121212),
+        outline: Colors.white.withOpacity(0.18), // Trắng viền
       ),
-      dividerColor: Colors.white.withValues(alpha: 0.12),
+      dividerColor: Colors.white.withOpacity(0.12),
       cardTheme: CardThemeData(
         color: const Color(0xFF1E1E1E),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: Colors.white.withValues(alpha: 0.15),
-            width: 1,
-          ),
+          side: BorderSide(color: Colors.white.withOpacity(0.15), width: 1),
         ),
       ),
     );
@@ -98,7 +94,10 @@ class _WorkLifeAppState extends State<WorkLifeApp> {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: _themeMode,
-      home: MainShell(themeMode: _themeMode, onThemeChanged: _updateThemeMode),
+      home: MainShell(
+        themeMode: _themeMode,
+        onThemeChanged: _updateThemeMode,
+      ),
     );
   }
 }
@@ -167,7 +166,9 @@ class _MainShellState extends State<MainShell> {
                       // Desktop Top Header
                       _buildDesktopHeader(isDark),
                       // Active View Body
-                      Expanded(child: pages[_currentIndex]),
+                      Expanded(
+                        child: pages[_currentIndex],
+                      ),
                     ],
                   ),
                 ),
@@ -180,10 +181,7 @@ class _MainShellState extends State<MainShell> {
             appBar: AppBar(
               title: Text(
                 _pageTitles[_currentIndex],
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               centerTitle: true,
               backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -198,16 +196,12 @@ class _MainShellState extends State<MainShell> {
               actions: [
                 IconButton(
                   icon: Icon(
-                    widget.themeMode == ThemeMode.dark
-                        ? Icons.light_mode
-                        : Icons.dark_mode,
+                    widget.themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
                     size: 20,
                   ),
                   onPressed: () {
                     widget.onThemeChanged(
-                      widget.themeMode == ThemeMode.dark
-                          ? ThemeMode.light
-                          : ThemeMode.dark,
+                      widget.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark,
                     );
                   },
                 ),
@@ -227,13 +221,9 @@ class _MainShellState extends State<MainShell> {
                 currentIndex: _currentIndex,
                 onTap: (index) => setState(() => _currentIndex = index),
                 type: BottomNavigationBarType.fixed,
-                backgroundColor: isDark
-                    ? const Color(0xFF1E1E1E)
-                    : Colors.white,
+                backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 selectedItemColor: isDark ? Colors.white : Colors.black,
-                unselectedItemColor: isDark
-                    ? Colors.white54
-                    : const Color(0xFF6B7280),
+                unselectedItemColor: isDark ? Colors.white54 : const Color(0xFF6B7280),
                 selectedFontSize: 11,
                 unselectedFontSize: 11,
                 items: const [
@@ -274,9 +264,7 @@ class _MainShellState extends State<MainShell> {
         color: isDark ? const Color(0xFF18181B) : Colors.white,
         border: Border(
           right: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? Colors.white.withOpacity(0.12) : const Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -328,37 +316,13 @@ class _MainShellState extends State<MainShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               children: [
-                _buildSidebarItem(
-                  0,
-                  'Trang chủ',
-                  Icons.home_outlined,
-                  Icons.home,
-                  isDark,
-                ),
+                _buildSidebarItem(0, 'Trang chủ', Icons.home_outlined, Icons.home, isDark),
                 const SizedBox(height: 4),
-                _buildSidebarItem(
-                  1,
-                  'Công việc & Sinh hoạt',
-                  Icons.assignment_outlined,
-                  Icons.assignment,
-                  isDark,
-                ),
+                _buildSidebarItem(1, 'Công việc & Sinh hoạt', Icons.assignment_outlined, Icons.assignment, isDark),
                 const SizedBox(height: 4),
-                _buildSidebarItem(
-                  2,
-                  'Tổng hợp & Thống kê',
-                  Icons.bar_chart_outlined,
-                  Icons.bar_chart,
-                  isDark,
-                ),
+                _buildSidebarItem(2, 'Tổng hợp & Thống kê', Icons.bar_chart_outlined, Icons.bar_chart, isDark),
                 const SizedBox(height: 4),
-                _buildSidebarItem(
-                  3,
-                  'Cài đặt hệ thống',
-                  Icons.settings_outlined,
-                  Icons.settings,
-                  isDark,
-                ),
+                _buildSidebarItem(3, 'Cài đặt hệ thống', Icons.settings_outlined, Icons.settings, isDark),
               ],
             ),
           ),
@@ -379,17 +343,13 @@ class _MainShellState extends State<MainShell> {
                 Row(
                   children: [
                     Icon(
-                      widget.themeMode == ThemeMode.dark
-                          ? Icons.dark_mode
-                          : Icons.light_mode,
+                      widget.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
                       size: 18,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      widget.themeMode == ThemeMode.dark
-                          ? 'Chế độ tối'
-                          : 'Chế độ sáng',
+                      widget.themeMode == ThemeMode.dark ? 'Chế độ tối' : 'Chế độ sáng',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -401,9 +361,7 @@ class _MainShellState extends State<MainShell> {
                 Switch(
                   value: widget.themeMode == ThemeMode.dark,
                   onChanged: (val) {
-                    widget.onThemeChanged(
-                      val ? ThemeMode.dark : ThemeMode.light,
-                    );
+                    widget.onThemeChanged(val ? ThemeMode.dark : ThemeMode.light);
                   },
                 ),
               ],
@@ -467,9 +425,7 @@ class _MainShellState extends State<MainShell> {
         color: isDark ? const Color(0xFF18181B) : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : const Color(0xFFE5E7EB),
+            color: isDark ? Colors.white.withOpacity(0.12) : const Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -488,10 +444,7 @@ class _MainShellState extends State<MainShell> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white10 : const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(6),
